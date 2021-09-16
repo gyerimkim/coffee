@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="Users">
+
+<select id="login" parameterType="bit.com.a.dto.UserDto" resultType="bit.com.a.dto.UserDto">
+	SELECT *
+	FROM TB_USER
+	WHERE USERNO=#{userNo} AND USERPW=#{userPw}
+</select>
+
+<select id="printUserNo" parameterType="bit.com.a.dto.UserDto" resultType="bit.com.a.dto.UserDto">
+<!-- 등록 시 화면에 사원번호를 자동으로 출력하게 함, 두 쿼리 모두 맞으나 하나만 출력 위하 아래것을 사용함 -->
+	<!-- SELECT MAX(USERNO)+1 FROM TB_USER ORDER BY USERNO -->
+	SELECT USERNO + 1
+	FROM (SELECT ROW_NUMBER()OVER(ORDER BY USERNO DESC) AS RNUM, USERNO
+   		FROM TB_USER
+   		ORDER BY USERNO DESC)
+	WHERE RNUM=1		
+</select>
+
+<insert id="registry" parameterType="bit.com.a.dto.UserDto">
+	INSERT INTO TB_USER <!-- #{userPw} 를 초반에는 userNo와 동일하게 설정함, 추후 개인이 변경하도록 함 -->
+	VALUES(SEQ_USER.NEXTVAL, SEQ_USER.NEXTVAL,
+		#{userName}, #{userEmail}, #{userTel}, #{userAddress}, #{userPhone},
+		#{userHireDate}, #{userEndDate}, #{userCurrWork},
+		#{userAuth}, #{deptCode}, #{jobCode}, #{comCode}, #{wpCode})
+</insert>
+
+<!-- 지금 쓰는 검색 필터링이 무엇인지 몰라 그냥 리스트만 나열하는 것으로 했습니다. 필요하신 경우 파라미터타입을 설정해주세요! -->
+<select id="userlist" resultType="bit.com.a.dto.UserDto2">
+	SELECT U.USERNO, USERNAME,
+		(SELECT NVL(USEREMAIL, 'N') FROM TB_USER), (SELECT NVL(USERTEL, 'N') FROM TB_USER),
+		(SELECT NVL(USERADDRESS, 'N') FROM TB_USER), (SELECT NVL(USERPHONE, 'N') FROM TB_USER),
+	 	USERHIREDATE, (SELECT NVL(USERENDDATE, '-') FROM TB_USER), USERCURRWORK,
+	 	USERAUTH, D.DEPTNAME, J.JOBTITLE, C.COMNAME, W.WPNAME
+	FROM TB_USER U, TB_DEPARTMENT D, TB_JOB J, TB_WORKPLACE W, TB_COMPANY C
+	WHERE U.DEPTCODE = D.DEPTCODE AND U.JOBCODE = J.JOBCODE AND U.WPCODE = W.WPCODE U.CONCODE = C.COMCODE
+	ORDER BY USERNO ASC
+</select>
+
+
+
+</mapper>

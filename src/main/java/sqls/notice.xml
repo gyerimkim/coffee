@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="Notice">
+
+<select id="getNoticeList" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.NoticeDto">
+	SELECT SEQ, USERNO, USERNAME, CATEGORY, TITLE, CONTENT, CREATEDATE, UPDATEDATE,  
+		FILENAME, NEWFILENAME, READCOUNT, READCHECK, IMT, DEL 
+	FROM
+		(SELECT 
+			SEQ, USERNO, USERNAME, CATEGORY, TITLE, CONTENT, CREATEDATE, UPDATEDATE,  
+			FILENAME, NEWFILENAME, READCOUNT, READCHECK, IMT, DEL 
+	FROM NOTICE 
+	WHERE 1=1 
+	
+	<if test=" category != null and category != '' 
+				and search != null and search != ''">
+			<if test="category == 'title'">
+				AND TITLE LIKE '%' || #{search} || '%' 
+			</if>
+			<if test="category == 'content'">
+				AND CONTENT LIKE '%' || #{search} || '%' 
+			</if>
+			<if test="category == 'username'">
+				AND USERNAME LIKE '%' || #{search} || '%' 
+			</if>		
+			
+	</if>		
+		ORDER BY DECODE(CATEGORY, '긴급', 1)
+		,SEQ DESC
+	)
+</select>
+
+<select id="getNoticeCount" parameterType="bit.com.a.dto.SearchParam" resultType="Integer">
+	SELECT NVL(COUNT(*), 0)
+	FROM NOTICE
+	WHERE 1=1 
+	<if test="category != null and category != '' 
+		and search != null and search != ''">
+		<if test="category == 'title'">
+			AND TITLE LIKE '%'||#{search}||'%'
+		</if>
+		<if test="category == 'content'">
+			AND CONTENT LIKE '%'||#{search}||'%'
+		</if>
+		<if test="category == 'username'">
+			AND USERNAME =#{search}
+		</if>	
+	</if>
+</select>
+
+<insert id="uploadNotice" parameterType="bit.com.a.dto.NoticeDto">
+	INSERT INTO NOTICE(SEQ, USERNO, USERNAME, CATEGORY, TITLE, CONTENT, FILENAME, NEWFILENAME,
+						CREATEDATE, UPDATEDATE, READCOUNT, READCHECK, IMT, DEL )
+	VALUES(SEQ_NOTICE.NEXTVAL, #{userno}, #{username}, #{category}, #{title}, #{content}, #{filename}, #{newfilename}, 
+					SYSDATE, SYSDATE, 0, 0, 0, 0 )		
+</insert>
+
+<select id="getNotice" parameterType="java.lang.Integer"
+	resultType="bit.com.a.dto.NoticeDto">
+	SELECT SEQ, USERNO, USERNAME, CATEGORY, TITLE, CONTENT, FILENAME, NEWFILENAME,
+		CREATEDATE, UPDATEDATE, READCOUNT, READCHECK, IMT, DEL
+	FROM NOTICE
+	WHERE SEQ=#{seq}
+</select>
+
+<update id="updateNotice" parameterType="bit.com.a.dto.NoticeDto">
+	UPDATE NOTICE
+	<if test= "newfilename != null">
+			SET TITLE=#{title}, CATEGORY=#{category}, CONTENT=#{content}, FILENAME=#{filename}, NEWFILENAME = #{newfilename}
+	</if> 
+	<if test= "newfilename == null">
+			SET TITLE=#{title}, CATEGORY=#{category}, CONTENT=#{content}, FILENAME=#{filename}
+	</if> 
+	
+	WHERE SEQ=#{seq}
+</update>
+
+<update id="readcount" parameterType="java.lang.Integer">
+	UPDATE NOTICE 
+	SET READCOUNT = READCOUNT + 1 
+	WHERE SEQ = #{seq} 
+</update>
+
+<delete id="deleteNotice" parameterType="java.lang.Integer">
+	DELETE NOTICE
+	WHERE SEQ=#{seq}
+</delete>
+
+
+<!-- 즐겨찾기 -->
+<insert id="bookmarkAdd" parameterType="bit.com.a.dto.BookmarkDto"> 
+	INSERT INTO BOOKMARK
+	VALUES(SEQ_BOOKMARK.NEXTVAL, #{userno}, #{notice_seq})
+</insert>
+
+<delete id="bookmarkDelete" parameterType="bit.com.a.dto.BookmarkDto">
+   DELETE BOOKMARK
+   WHERE USERNO=#{userno}
+   AND NOTICE_seq=#{notice_seq}
+</delete>
+
+
+<select id="getBookmarkCount" parameterType="bit.com.a.dto.BookmarkDto" resultType="Integer">
+   SELECT NVL(COUNT(*), 0) FROM BOOKMARK
+   WHERE USERNO=#{userno} AND NOTICE_SEQ=#{notice_seq}
+</select>
+
+<select id="getBookmarkList" parameterType="Integer" resultType="bit.com.a.dto.BookmarkDto">
+SELECT B.SEQ, B.USERNO, N.USERNAME, N.TITLE, N.CONTENT, N.READCOUNT, N.CREATEDATE, B.NOTICE_SEQ 
+   FROM BOOKMARK B, NOTICE N 
+   WHERE B.NOTICE_SEQ=N.SEQ
+   AND B.USERNO=#{userno}
+   ORDER BY B.SEQ DESC
+</select>
+
+</mapper>  
+
+
+
+
+
+

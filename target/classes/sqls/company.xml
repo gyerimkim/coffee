@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Company">
+
+<select id="getAllCps" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.CompanyDto"> 
+	SELECT COMCODE, COMNAME, COMREP, COMTEL, DEL
+	FROM (SELECT ROW_NUMBER()OVER(ORDER BY COMCODE ASC) AS RNUM,
+			COMCODE, COMNAME, COMREP, COMTEL, DEL
+			FROM TB_COMPANY	
+			WHERE 1=1
+			<if test="category != null and category != '' 
+			and search != null and search != '' ">
+				<if test="category == 'comCode' ">
+					AND COMCODE LIKE '%' || #{search} || '%'
+				</if>
+				<if test="category == 'comName' ">
+					AND COMNAME LIKE '%' || #{search} || '%'
+				</if>
+				<if test="category == 'comTel' ">
+					AND COMTEL LIKE '%' || #{search} || '%'
+				</if>
+				<if test="category == 'comRep' ">
+					AND COMREP = #{search}
+				</if>
+			</if>
+	ORDER BY COMCODE ASC)
+	WHERE RNUM BETWEEN ${start} AND ${end}	
+</select>
+
+<select id="getCp" parameterType="java.lang.Integer" resultType="bit.com.a.dto.CompanyDto"> 
+	SELECT COMCODE, COMNAME, COMREP, COMTEL, DEL
+	FROM TB_COMPANY
+	WHERE COMCODE =#{comCode}
+</select>
+
+<select id="getCpName" parameterType="java.lang.String" resultType="java.lang.Integer"> 
+	SELECT NVL(COUNT(*),0)
+	FROM TB_COMPANY
+	WHERE COMNAME =#{comName}
+</select>
+
+<select id="getCpCount" parameterType="bit.com.a.dto.SearchParam" resultType="java.lang.Integer">
+	SELECT NVL(COUNT(*),0)
+	FROM TB_COMPANY
+	WHERE 1=1
+	<if test="category != null and category != '' 
+	and search != null and search != '' ">
+		<if test="category == 'comCode' ">
+			AND COMCODE LIKE '%' || #{search} || '%'
+		</if>
+		<if test="category == 'comName' ">
+			AND COMNAME LIKE '%' || #{search} || '%'
+		</if>
+		<if test="category == 'comTel' ">
+			AND COMTEL LIKE '%' || #{search} || '%'
+		</if>
+		<if test="category == 'comrep' ">
+			AND COMREP = #{search}
+		</if>
+	</if>
+</select>
+
+<insert id="addCp" parameterType="bit.com.a.dto.CompanyDto">
+	INSERT INTO TB_COMPANY
+	VALUES (SEQ_COMPANY.NEXTVAL, #{comName}, #{comRep}, #{comTel}, 0)
+</insert>
+
+<update id="editCp" parameterType="bit.com.a.dto.CompanyDto">
+	UPDATE TB_COMPANY
+	SET COMNAME= #{comName}, COMREP= #{comRep}, COMTEL= #{comTel}
+	WHERE COMCODE= #{comCode}
+</update>
+
+<update id="delCp" parameterType="java.lang.Integer">
+	UPDATE TB_COMPANY 
+	SET DEL = 1
+	WHERE COMCODE = #{comCode}
+</update>
+
+</mapper> 

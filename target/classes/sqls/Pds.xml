@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="Pds">
+
+<select id="getPdsList" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.PdsDto">
+	SELECT SEQ, USERNAME, TITLE, CONTENT, FILENAME, NEWFILENAME,  
+		READCOUNT, DOWNCOUNT, REGDATE
+	FROM 
+		(SELECT 
+			SEQ, USERNAME, TITLE, CONTENT, FILENAME, NEWFILENAME,  
+			READCOUNT, DOWNCOUNT, REGDATE 
+	FROM PDS
+	WHERE 1=1 
+		
+	<if test=" category != null and category != '' 
+				and search != null and search != ''">
+			<if test="category == 'title'">
+				AND TITLE LIKE '%' || #{search} || '%' 
+			</if>
+			<if test="category == 'content'">
+				AND CONTENT LIKE '%' || #{search} || '%' 
+			</if>
+			<if test="category == 'username'">
+				AND USERNAME LIKE '%' || #{search} || '%' 
+			</if>					
+	</if>		
+		ORDER BY SEQ DESC)
+</select>
+
+<select id="getPdsCount" parameterType="bit.com.a.dto.SearchParam" resultType="Integer">
+	SELECT NVL(COUNT(*), 0)
+	FROM PDS
+	WHERE 1=1 
+	<if test="category != null and category != '' 
+		and search != null and search != ''">
+		<if test="category == 'title'">
+			AND TITLE LIKE '%'||#{search}||'%'
+		</if>
+		<if test="category == 'content'">
+			AND CONTENT LIKE '%'||#{search}||'%'
+		</if>
+		<if test="category == 'username'">
+			AND USERNAME = #{search}
+		</if>	
+	</if>
+</select>
+
+
+<insert id="uploadPds" parameterType="bit.com.a.dto.PdsDto">
+	INSERT INTO PDS(SEQ, USERNAME, TITLE, CONTENT, FILENAME, NEWFILENAME, READCOUNT, DOWNCOUNT, REGDATE)
+	VALUES(SEQ_PDS.NEXTVAL, #{username}, #{title}, #{content}, #{filename}, #{newfilename}, 0, 0, SYSDATE)
+</insert>
+
+<select id="getPds" parameterType="java.lang.Integer"
+	resultType="bit.com.a.dto.PdsDto">
+	SELECT SEQ, USERNAME, TITLE, CONTENT, FILENAME, NEWFILENAME, 
+		READCOUNT, DOWNCOUNT, REGDATE
+	FROM PDS
+	WHERE SEQ=#{seq}
+</select>
+
+<update id="updatepds" parameterType="bit.com.a.dto.PdsDto">
+	UPDATE PDS
+	SET TITLE=#{title}, CONTENT=#{content}, FILENAME=#{filename}, REGDATE=SYSDATE
+	WHERE SEQ=#{seq}
+</update>
+
+<update id="readcount" parameterType="java.lang.Integer">
+	UPDATE PDS
+	SET READCOUNT=READCOUNT+1
+	WHERE SEQ=#{seq}
+</update>
+
+<update id="downcount" parameterType="java.lang.Integer">
+	UPDATE PDS
+	SET DOWNCOUNT=DOWNCOUNT+1
+	WHERE SEQ=#{seq}
+</update>
+
+<delete id="deletePds" parameterType="java.lang.Integer">
+	DELETE PDS
+	WHERE SEQ=#{seq}
+</delete>
+
+</mapper>  
+
+
+
+
+
+

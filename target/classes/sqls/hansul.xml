@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- CREATE TABLE ELECDDOCU(
+	 PK
+	DOCUSEQ NUMBER(5) PRIMARY KEY,
+	RELATEDNUM VARCHAR2(30) NOT NULL,  2021080213051108 // 실제 PK는 아니나, 연관문서 연결 시 필요한 고유번호
+	 FK
+	USERNO NUMBER(8) NOT NULL,
+	JOBCODE NUMBER(4) NOT NULL,
+	DEPTCODE NUMBER(4) NOT NULL,
+	WPCODE NUMBER(4) NOT NULL,
+	WRITEDATE DATE,  자동으로 SYSDATE
+	UPDATEDATE DATE, 자동으로 SYSDATE
+	CONFIRMLINE VARCHAR2(300) NOT NULL, 결재자는 필수, 참조 협조는 선택
+	REFEREE VARCHAR2(300),
+	COOPERATOR VARCHAR2(300),
+	CHECKING NUMBER(1),  0미상신 1 상신후 2 결재중 3 반려 4 결재최종완료
+	STATEMENT NUMBER(1),  결재자 각각마다 미결재0 승인1 반려2
+	CATEGORY VARCHAR2(50) NOT NULL,
+	PERIOD VARCHAR2(50) NOT NULL,
+	RELATED VARCHAR2(150), 연관글번호 RELATEDNUM을 끌어와서 저장, 최대 5개까지만 연결 가능
+	TITLE VARCHAR2(400) NOT NULL,
+	CONTENT VARCHAR2(2000) NOT NULL,
+	FILENAME VARCHAR2(600),
+	NEWFILENAME VARCHAR2(600),
+	DEL NUMBER(1) - 미상신 시만 기능
+);
+CREATE SEQUENCE SET_DOCUSEQ
+START WITH 1
+INCREMENT BY 1;
+ALTER TABLE ELECDOCU
+ADD CONSTRAINT FK_ELECDOCU_USERNO FOREIGN KEY(USERNO)
+REFERENCES USERS(USERNO);
+ALTER TABLE ELECDOCU
+ADD CONSTRAINT FK_ELECDOCU_JOBCODE FOREIGN KEY(JOBCODE)
+REFERENCES JOB(JOBCODE);
+ALTER TABLE ELECDOCU
+ADD CONSTRAINT FK_ELECDOCU_DEPTCODE FOREIGN KEY(DEPTCODE)
+REFERENCES DEPARTMENT(DEPTCODE);
+ALTER TABLE ELECDOCU
+ADD CONSTRAINT FK_ELECDOCU_WPCODE FOREIGN KEY(WPCODE)
+REFERENCES WORKPLACE(WPCODE);
+
+
+CREATE TABLE ELECDDOCUREPLY(
+	 PK
+	REPLYSEQ NUMBER(2) PRIMARY KEY,
+	 FK
+	DOCUSEQ NUMBER(5) NOT NULL,
+	USERNO NUMBER(8) NOT NULL,
+	JOBCODE NUMBER(4) NOT NULL,
+	DEPTCODE NUMBER(4) NOT NULL,
+	WPCODE NUMBER(4) NOT NULL,
+	REPLYCONTENT VARCHAR2(600),
+	REPLYFILENAME VARCHAR2(600),
+	REPLYNEWFILENAME VARCHAR2(600),
+	REPLYDATE DATE,
+	REPLYDEL NUMBER(1)
+);
+CREATE SEQUENCE SET_REPLYSEQ
+START WITH 1
+INCREMENT BY 1;
+ALTER TABLE ELECDOCUREPLY
+ADD CONSTRAINT FK_ELECDOCUREPLY_DOCUSEQ FOREIGN KEY(DOCUSEQ)
+REFERENCES ELECDOCU(DOCUSEQ);
+ALTER TABLE ELECDOCUREPLY
+ADD CONSTRAINT FK_ELECDOCUREPLY_USERNO FOREIGN KEY(USERNO)
+REFERENCES USERS(USERNO);
+ALTER TABLE ELECDOCUREPLY
+ADD CONSTRAINT FK_ELECDOCUREPLY_JOBCODE FOREIGN KEY(JOBCODE)
+REFERENCES JOB(JOBCODE);
+ALTER TABLE ELECDOCUREPLY
+ADD CONSTRAINT FK_ELECDOCUREPLY_DEPTCODE FOREIGN KEY(DEPTCODE)
+REFERENCES DEPARTMENT(DEPTCODE);
+ALTER TABLE ELECDOCUREPLY
+ADD CONSTRAINT FK_ELECDOCUREPLY_WPCODE FOREIGN KEY(WPCODE)
+REFERENCES WORKPLACE(WPCODE); -->	
+
+<mapper namespace="hansul">
+
+<!-- 내가 작성한 기안 리스트 - 상신 기안 / 카테고리로 검색이나 분류가 가능하도록 함 -->
+<select id="report_docu_list" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.ElecDocuDto"><!-- bit.com.a.dto.ElecDocuDto -->
+	SELECT ED.DOCUSEQ, ED.USERNO, J.JOBTITLE, D.DEPTNAME, W.WPNAME, ED.RELATEDNUM,
+			ED.WRITEDATE, ED.UPDATEDATE, 
+			ED.CONFIRMLINE, ED.REFEREE, ED.COOPERATOR, ED.STATEMENT, ED.CATEGORY, ED.PERIOD, ED.RELATED, 
+			ED.TITLE, ED.CONTENT, ED.FILENAME, ED.NEWFILENAME, ED.DEL
+	FROM (SELECT ROW_NUMBER()OVER(ORDER BY DOCUSEQ DESC) AS RNUM, ELECDOCU.*
+		FROM ELECDOCU
+		WHERE 1=1 AND STATEMENT > 0
+		<if test="category != null and category != '' and search != null and search != ''">
+			<if test="category == 'title'">
+				AND TITLE LIKE '%'||#{search}||'%'
+			</if>
+			<if test="category == 'writeDate'">			
+				AND TO_CHAR(WRITEDATE, 'YYYYMMDD')BETWEEN TO_CHAR(#{search}, 'YYYYMMDD') AND TO_CHAR(#{search1}, 'YYYYMMDD')
+			</if>
+			<if test="category == 'statement'">
+				AND STATEMENT = ${search}
+			</if>
+		</if>
+		ORDER BY DOCUSEQ DESC)ED, TB_USER U, TB_JOB J, TB_DEPARTMENT D, TB_WORKPLACE W
+	WHERE ED.USERNO=U.USERNO AND ED.JOBCODE=J.JOBCODE AND ED.DEPTCODE=D.DEPTCODE AND ED.WPCODE=W.WPCODE 
+		AND RNUM BETWEEN ${start} AND ${end} AND U.USERNO = #{userNo}
+</select>
+
+<!-- 내가 작성한 기안 리스트 - 미상신 기안 -->
+<select id="unreport_docu_list" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.ElecDocuDto"><!-- bit.com.a.dto.ElecDocuDto -->
+	SELECT ED.DOCUSEQ, ED.USERNO, J.JOBTITLE, D.DEPTNAME, W.WPNAME, ED.RELATEDNUM,
+			ED.WRITEDATE, ED.UPDATEDATE, 
+			ED.CONFIRMLINE, ED.REFEREE, ED.COOPERATOR, ED.STATEMENT, ED.CATEGORY, ED.PERIOD, ED.RELATED, 
+			ED.TITLE, ED.CONTENT, ED.FILENAME, ED.NEWFILENAME, ED.DEL
+	FROM (SELECT ROW_NUMBER()OVER(ORDER BY DOCUSEQ DESC) AS RNUM, ELECDOCU.*
+		FROM ELECDOCU
+		WHERE 1=1 AND STATEMENT = 0
+		ORDER BY DOCUSEQ DESC)ED, TB_USER U, TB_JOB J, TB_DEPARTMENT D, TB_WORKPLACE W
+	WHERE ED.USERNO=U.USERNO AND ED.JOBCODE=J.JOBCODE AND ED.DEPTCODE=D.DEPTCODE AND ED.WPCODE=W.WPCODE 
+		AND RNUM BETWEEN ${start} AND ${end} AND U.USERNO = #{userNo}
+</select>
+
+<!-- 내가 작성한 기안 리스트 - 상신 기안 / 카테고리로 검색이나 분류가 가능하도록 함
+<select id="report_docu_list" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.ElecDocuDto">bit.com.a.dto.ElecDocuDto
+	SELECT  ED.DOCUSEQ, ED.RELATEDNUM, ED.USERNO, U.USERNAME, J.JOBTITLE, D.DEPTNAME, W.WPNAME
+			ED.WRITEDATE, ED.UPDATEDATE, ED.CONFIRMLINE, ED.REFEREE, ED.COOPERATOR,
+			ED. CHECKING, ED.STATEMENT, ED.CATEGORY, ED.PERIOD, ED.RELATED, ED.TITLE, ED.CONTENT, ED.FILENAME, ED.NEWFILENAME, ED.DEL
+	FROM TB_USER U, TB_JOB J, TB_DEPARTMENT D, TB_WORKPLACE W, ELECDOCU ED
+		(SELECT ROW_NUMBER()OVER(ORDER BY DOCUSEQ DESC) AS RNUM,
+			ED.DOCUSEQ, ED.RELATEDNUM, U.USERNO, U.USERNAME, J.JOBTITLE, D.DEPTNAME, W.WPNAME
+			ED.WRITEDATE, ED.UPDATEDATE, ED.CONFIRMLINE, ED.REFEREE, ED.COOPERATOR,
+			ED. CHECKING, ED.STATEMENT, ED.CATEGORY, ED.PERIOD, ED.RELATED, ED.TITLE, ED.CONTENT, ED.FILENAME, ED.NEWFILENAME, ED.DEL
+		FROM ELECDOCU ED, TB_USER U, TB_JOB J, TB_DEPARTMENT D, TB_WORKPLACE W 
+		WHERE USERNO = #{userNo}  AND CHECKING != 0  내가쓴글 & 체킹(현재문서상태-미상신0, 상신후 결재미진행1, 결재중2, 반려3, 결재완료4)
+		<if test="category != null and category != '' and search != null and search != ''">
+			<if test="category == 'title'"> 제목검색
+				AND TITLE LIKE '%'||#{search}||'%'
+			</if>
+			<if test="category == 'writeDate'"> 작성기간검색 - 0000/00/00 ~ 0000/00/00 하려면 이 처리 맞나?? 아닌것같은데...ㅠㅠㅠㅠ
+			
+				AND TO_CHAR(WRITEDATE, 'YYYYMMDD')BETWEEN TO_CHAR(#{search}, 'YYYYMMDD') AND TO_CHAR(#{search1}, 'YYYYMMDD') 날짜와 날짜 사이 검색, SEARCH를 어떻게 처리하지?? 
+			</if>
+			<if test="category == 'checking'"> 1 2 3 4 중에서 검색할 수 있도록 할 것
+				AND CHECKING = ${search}
+			</if>
+		</if>
+		ORDER BY DOCUSEQ DESC) ED
+	WHERE RNUM BETWEEN ${start} AND ${end} 페이지끊기
+	WHERE ED.USERNO = U.USERNO AND U.DEPTCODE = D.DEPTCODE AND U.JOBCODE = J.JOBCODE AND U.WPCODE = W.WPCODE
+</select> -->
+
+<!-- 내가 작성한 기안 리스트 - 미상신 기안
+<select id="unreport_docu_list" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.ElecDocuDto">
+	SELECT ED.DOCUSEQ, ED.RELATEDNUM, ED.USERNO, J.JOBTITLE, D.DEPTNAME, W.WPNAME, ED.WRITEDATE, ED.UPDATEDATE, 
+		ED.CONFIRMLINE, ED.REFEREE, ED.COOPERATOR, ED.CHECKING, ED.STATEMENT, ED.CATEGORY, ED.PERIOD, ED.RELATED, 
+		ED.TITLE, ED.CONTENT, ED.FILENAME, ED.NEWFILENAME, ED.DEL
+	FROM TB_USER U, TB_JOB J, TB_DEPARTMENT D, TB_WORKPLACE W, 
+		(SELECT ROW_NUMBER()OVER(ORDER BY docuSeq DESC) AS RNUM, ELECDOCU.*
+			FROM ELECDOCU
+			WHERE CHECKING = 0
+			ORDER BY DOCUSEQ DESC) ED
+	WHERE ED.USERNO = U.USERNO AND U.DEPTCODE = D.DEPTCODE AND U.JOBCODE = J.JOBCODE AND U.WPCODE = W.WPCODE
+			AND RNUM BETWEEN ${start} AND ${end} AND U.USERNO = #{userNo}
+</select> -->
+
+<!-- 내가 작성한 기안 - 상신 미상신 (둘 다에 동시 적용 가능한가...??)기안 글의 총 수를 세기 - 페이지 끊는 용도 -->
+<select id="docu_cutting" parameterType="bit.com.a.dto.SearchParam" resultType="Integer">
+	SELECT NVL(COUNT(*), 0)
+	FROM ELECDOCU
+	WHERE USERNO = #{userNo}
+			<!-- AND ED.USERNO = U.USERNO AND U.DEPTCODE = D.DEPTCODE AND U.JOBCODE = J.JOBCODE AND U.WPCODE = W.WPCODE -->
+		<if test="category != null and category != '' 	and search != null and search != ''">
+			<if test="statement == 0 ">
+				AND STATEMENT = 0
+			</if>
+			<if test="statement > 0 ">
+				AND STSTEMENT > 0
+			</if>
+			<if test="category == 'title'"> <!-- 제목검색 -->
+				AND TITLE LIKE '%'||#{search}||'%'
+			</if>
+			<if test="category == 'writedate'"> <!-- 작성기간검색 -->
+				AND TOCHAR(WRITEDATE, 'YYYYMMDD')BETWEEN TOCHAR(#{search}, 'YYYYMMDD') AND TOCHAR(#{search1}, 'YYYYMMDD')
+			</if>
+			<if test="category == 'statement'"> <!-- 1 2 3 4 중에서 검색할 수 있도록 할 것 -->
+				AND STATEMENT = #{search}
+			</if>
+		</if>
+</select>
+
+<!-- 내가 작성한 기안 - 미상신 가장 최근 5개만 노출 -->
+<select id="docu_top5_unr" resultType="bit.com.a.dto.ElecDocuDto">
+	SELECT ED.DOCUSEQ, U.USERNAME, ED.CATEGORY, ED.TITLE, ED.STATEMENT, ED.WRITEDATE
+	FROM (SELECT E.* , ROW_NUMBER()OVER(ORDER BY DOCUSEQ DESC) AS RNUM
+		 FROM ELECDOCU E
+		 WHERE E.STATEMENT = 0
+		 ORDER BY E.DOCUSEQ DESC) ED, TB_USER U
+	WHERE ED.USERNO = #{userNo} AND U.USERNO = ED.USERNO AND RNUM BETWEEN 0 AND 5
+</select>
+
+<!-- 내가 작성한 기안 - 상신 가장 최근 5개만 노출 -->
+<select id="docu_top5_r" resultType="bit.com.a.dto.ElecDocuDto">
+	SELECT ED.DOCUSEQ, U.USERNAME, ED.CATEGORY, ED.TITLE, ED.STATEMENT, ED.WRITEDATE
+	FROM (SELECT E.* , ROW_NUMBER()OVER(ORDER BY DOCUSEQ DESC) AS RNUM
+		 FROM ELECDOCU E
+		 WHERE E.STATEMENT != 0
+		 ORDER BY E.DOCUSEQ DESC) ED, TB_USER U
+	WHERE ED.USERNO = #{userNo} AND U.USERNO = ED.USERNO AND RNUM BETWEEN 0 AND 5
+				
+</select>
+
+<!-- 문서 디테일 조회 -->
+<select id="docu_detail" parameterType="java.lang.Integer" resultType="bit.com.a.dto.ElecDocuDto">
+	SELECT ED.DOCUSEQ, ED.USERNO, U.USERNAME, J.JOBTITLE, D.DEPTNAME, W.WPNAME, ED.RELATEDNUM,
+			ED.WRITEDATE, ED.UPDATEDATE, 
+			ED.CONFIRMLINE, ED.REFEREE, ED.COOPERATOR, ED.STATEMENT, ED.CATEGORY, ED.PERIOD, ED.RELATED, 
+			ED.TITLE, ED.CONTENT, ED.FILENAME, ED.NEWFILENAME, ED.DEL
+	FROM ELECDOCU ED, TB_USER U, TB_JOB J, TB_DEPARTMENT D, TB_WORKPLACE W
+	WHERE ED.DOCUSEQ=#{docuSeq}
+		AND ED.USERNO=U.USERNO AND ED.JOBCODE=J.JOBCODE AND ED.DEPTCODE=D.DEPTCODE AND ED.WPCODE=W.WPCODE 
+</select>
+
+
+
+
+<!-- 신규 기안 작성 -->
+<insert id="docu_write" parameterType="bit.com.a.dto.ElecDocuDto">
+	INSERT INTO ELECDOCU
+	VALUES(DOCUSEQ_ELECDOCU.NEXTVAL, #{userNo}, #{jobCode}, #{deptCode}, #{wpCode}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		SYSDATE, SYSDATE, #{confirmLine}, #{referee}, #{cooperator}, 0,
+		#{category}, #{period}, #{related}, #{title}, #{content}, #{fileName}, #{newFileName}, 0)
+</insert>
+
+<!-- 결재자 라인 등 띄우는 팝업 -->
+<select id="userList" parameterType="bit.com.a.dto.SearchParam" resultType="bit.com.a.dto.UserDto2" >
+	SELECT U.USERNO, U.USERNAME, D.DEPTNAME, J.JOBTITLE, W.WPNAME
+	FROM TB_DEPARTMENT D, TB_JOB J, TB_USER U, TB_COMPANY C, TB_WORKPLACE W
+	WHERE U.DEPTCODE = D.DEPTCODE AND U.JOBCODE = J.JOBCODE AND U.COMCODE= C.COMCODE AND U.WPCODE = W.WPCODE
+		<if test="category != null and category != '' and search != null and search != ''">
+			<if test="category == 'userName'">
+				AND U.USERNAME LIKE '%'||#{search}||'%'
+			</if>
+			<if test="category == 'deptName'">
+				AND D.DEPTNAME LIKE '%'||#{search}||'%'
+			</if>			
+			<if test="category == 'jobTitle'">			
+				AND JOBTITLE LIKE '%'||#{search}||'%'
+			</if>
+		</if>
+	ORDER BY U.DEPTCODE ASC, U.USERNAME ASC
+</select>
+
+
+<!-- 문서 수정 가능 - 수정은 결재 시작하면 무조건 불가능, 단 미결재 상태일때는 회수해서 수정 가능 -->
+<update id="update_unreported" parameterType="bit.com.a.dto.ElecDocuDto">
+	UPDATE ELECDOCU
+	SET WRITEDATE=SYSDATE,
+		CONFIRMLINE=#{confirmLine}, REFEREE=#{referee}, COOPERATOR=#{cooperator},
+		CATEGORY=#{category}, PERIOD=#{period}, RELATED=#{related},
+		TITLE=#{title}, CONTENT=#{content}, FILENAME=#{FILENAME}, NEWFILENAME=#{NEWFILENAME}
+	WHERE DOCUSEQ = #{docuSeq} AND <![CDATA[CHECKING = 0]]> <!-- VIEW에서 수정버튼을 노출하지 않으면 애초부터 수정이 불가해서 결재상태 처리 안해도 되긴 함 -->
+</update>
+
+<!-- 문서 회수 - 상신하였으나 미결재 시 처리 가능 -->
+<update id="docu_recall" parameterType="Integer">
+	UPDATE ELECDOCU
+	SET STATEMENT = 0
+	WHERE DOCUSEQ = #{docuSeq} <!-- AND STATEMENT = 1 -->
+</update>
+
+
+<!-- 상신 -->
+ <update id="docu_report" parameterType="Integer">
+	UPDATE ELECDOCU
+	SET STATEMENT = 1
+	WHERE DOCUSEQ = #{docuSeq} AND STATEMENT = 0
+</update>
+
+
+<!-- 문서삭제 - 결재 시작한 문서 삭제 불가, 단 미결재 상태일때는 회수하여 삭제 가능 -->
+<delete id="delete_unreported" parameterType="Integer">
+	DELETE FROM ELECDOCU
+	WHERE DOCUSEQ = #{docuSeq} AND STATEMENT = 0
+</delete>
+
+
+<!-- ================================================================================================================= -->
+
+
+<!-- 댓글 전체 - 필터링 전혀 없음-->
+<select id="replydetail" parameterType="Integer" resultType="bit.com.a.dto.ElecDocuReply">
+	SELECT REPLYSEQ, EDR.DOCUSEQ, U.USERNAME, J.JOBTITLE, D.DEPTNAME,
+		REF, STEP, DEPTH, REPLYCONTENT,
+		<!-- CASE WHEN EDR.REPLYDEL = 1 THEN '***삭제된 댓글입니다***' ELSE EDR.REPLYCONTENT END EDR.REPLYCONTENT,-->
+		REPLYFILENAME, REPLYNEWFILENAME, REPLYDATE, REPLYDEL		
+	FROM ELECDOCU ED, TB_USER U, TB_JOB J, TB_DEPARTMENT D,
+		(SELECT * <!-- ROW_NUMBER()OVER(ORDER BY REF DESC, STEP ASC) AS RNUM,  -->
+		FROM ELECDOCUREPLY EDR
+		WHERE EDR.DOCUSEQ = #{docuSeq}
+		ORDER BY REPLYSEQ, REF, STEP) EDR
+	WHERE EDR.DOCUSEQ = ED.DOCUSEQ AND ED.USERNO = U.USERNO AND U.DEPTCODE = D.DEPTCODE AND U.JOBCODE = J.JOBCODE 
+		<!-- AND EDR.DOCUSEQ = #{docuSeq} -->
+	
+</select>
+
+<!-- 댓글작성 -->
+<insert id="replywrite" parameterType="bit.com.a.dto.ElecDocuReply">
+	INSERT INTO ELECDOCUREPLY(REPLYSEQ, DOCUSEQ, USERNO, JOBCODE, DEPTCODE,
+			REF, STEP, DEPTH,
+			REPLYCONTENT, REPLYFILENAME, REPLYNEWFILENAME,
+			REPLYDATE, REPLYDEL)
+	VALUES(REPLYSEQ_ELECDOCUREPLY.NEXTVAL, #{docuSeq}, #{userNo}, #{jobCode}, #{deptCode},
+			(SELECT NVL(MAX(REF)+1, 0) FROM ELECDOCUREPLY), 0, 0,
+			#{replyContent}, #{replyFileName}, #{replyNewFileName},
+			SYSDATE, 0)
+</insert>
+
+<!-- 댓글수정: 첨부파일 수정 불가, 내용과 첨부파일 수정 가능하게 하기 -->
+<update id="replyupdate" parameterType="bit.com.a.dto.ElecDocuReply">
+	UPDATE ELECDOCUREPLY
+	SET REPLYCONTENT=#{replyContent}, REPLYFILENAME=#{replyFileName}, REPLYNEWFILENAME=#{replyNewFileName}, REPLYDATE=#{replyDate
+	}	
+	WHERE REPLYSEQ=#{replySeq} AND USERNO=#{userNo}
+</update>
+
+<!-- 댓글삭제: UPDATE로 처리함, DEL=1 일때는 SELECT에서 처리함 -->
+
+<update id="replydelete" parameterType="Integer">
+	UPDATE ELECDOCUREPLY
+	SET REPLYDEL = 1
+	WHERE REPLYSEQ=#{replySeq} AND USERNO=#{userNo}
+</update>
+
+
+
+
+<!-- =========================================================================== -->
+<!-- 생성, 보기, 수정(글 수정, 회수, 상신, 결재중, 결재완료, 반려), 삭제(글삭제) -->
+<!-- 1. 결재라인 생성 -->
+<insert id="confLineCreate" parameterType="bit.com.a.dto.ElecDocuConf">
+	INSERT INTO ELECDOCUCONF
+	VALUES(CONFSEQ_ELECDOCUCONF.NEXTVAL, #{docuSeq}, #{confirmLine}, NULL, #{userNo})
+</insert>
+
+<!-- 2. 결재라인 보기 -->
+<select id="confLine" parameterType="Integer" resultType="bit.com.a.dto.ElecDocuConf">
+	SELECT C.CONFSEQ, E.DOCUSEQ, C.CONFIRMLINE, C.CHECKING, U.USERNO
+	FROM ELECDOCUCONF C, ELECDOCU E, TB_USER U
+	WHERE C.DOCUSEQ=#{docuSeq} AND C.DOCUSEQ = E.DOCUSEQ AND C.USERNO = U.USERNO
+</select>
+
+<!-- 3-1. 회수 - 체킹 0으로 만들기 -->
+<update id="conf_recall_0" parameterType="Integer">
+	UPDATE ELECDOCUCONF
+	SET CHECKING = NULL
+	WHERE CONFSEQ = #{confSeq}
+</update>
+
+<!-- 3-2. 상신 - 작성자 체킹 1로 만들기 -->
+<update id="conf_report_1" parameterType="Integer">
+	UPDATE ELECDOCUCONF
+	SET CHECKING = CHECKING || '상신_'
+	WHERE CONFSEQ = #{confSeq}
+</update>
+
+<!-- 3-3. 결재중 - 체킹 [+"승인"]로 만들기 -->
+<update id="conf_update_2" parameterType="Integer">
+	UPDATE ELECDOCUCONF
+	SET CHECKING = CHECKING || '승인_'
+	WHERE CONFSEQ = #{confSeq}
+</update>
+
+<!-- 3-4. 결재반려 - 체킹 [+"반려"]로 만들기 -->
+<update id="conf_update_3" parameterType="Integer">
+	UPDATE ELECDOCUCONF
+	SET CHECKING = CHECKING || '반려'
+	WHERE CONFSEQ = #{confSeq}
+</update>
+
+<!-- 3-5. 결재완료 - 최종승인자의 '최종승인' 추가 -->
+<update id="conf_update_4" parameterType="Integer">
+	UPDATE ELECDOCUCONF
+	SET CHECKING = CHECKING || '최종승인'
+	WHERE CONFSEQ = #{confSeq}
+</update>
+
+<!-- 4-1. 반려 문서 STATEMENT 변경 -->
+<update id="docu_update_3" parameterType="Integer">
+	UPDATE ELECDOCU
+	SET STATEMENT = 3
+	WHERE DOCUSEQ = #{docuSeq}
+</update>
+
+<!-- 4-2. 최종승인 문서 STATEMENT 변경 -->
+<update id="docu_update_4" parameterType="Integer">
+	UPDATE ELECDOCU
+	SET STATEMENT = 4
+	WHERE DOCUSEQ = #{docuSeq}
+</update>
+
+</mapper>
