@@ -7,19 +7,19 @@ import bit.com.a.dto.SearchParam;
 import bit.com.a.dto.UserDto2;
 
 public interface NoticeDao {
-
+	
 	List<NoticeDto> getNoticeList();
 	
 	boolean uploadNotice(NoticeDto dto);
-	
-	NoticeDto getNotice(int seq);
-	
-	int getNoticeCount(SearchParam notice);
-	
-	void readcount(int seq);
-	
 	boolean updateNotice(NoticeDto dto);
 	void deleteNotice(int seq);
 	
-	List<UserDto2> allUserList(SearchParam param);
+	// datail 보기
+	NoticeDto getNotice(int seq);	
+	
+	// 페이지 수
+	int getNoticeCount(SearchParam notice);	
+	
+	void readcount(int seq);
+
 }
