@@ -8,7 +8,7 @@ public interface BookmarkDao {
 	// 줄겨찾기 하기
 	public int bookmarkAdd(BookmarkDto bk);
 	
-	// 즐겨찾기 헤재
+	// 즐겨찾기 해제
 	public int bookmarkDelete(BookmarkDto bk);
 	
 	// 즐겨찾기 여부 확인용
