@@ -92,9 +92,9 @@ public class NoticeController {
 		System.out.println("로그인유저넘버 " + userno);	
 		
 		//페이징 처리
-		int sn = param.getPageNumber();	// 0 1 2 3 4
-		int start = 1 + sn * 10;	// 1  11
-		int end = (sn + 1) * 10;	// 10 20 
+		int sn = param.getPageNumber();	 // 0 1 2 3 4
+		int start = 1 + sn * 10;	 // 1 11 21 31
+		int end = (sn + 1) * 10;	 // 10 20 30 40
 		
 		param.setStart(start);
 		param.setEnd(end);
@@ -109,7 +109,7 @@ public class NoticeController {
 		model.addAttribute("blist", blist);
 	
 		int totalCount = service.getNoticeCount(param);
-		model.addAttribute("totalCount", totalCount);
+		model.addAttribute("totalCount", totalCount); 
 		
 		model.addAttribute("pageNumber", param.getPageNumber() + 1);
 
@@ -121,9 +121,10 @@ public class NoticeController {
 	public String noticelist(Model model, SearchParam param) {
 		model.addAttribute("doc_title", "공지사항");
 		
-		int sn = param.getPageNumber();	// 0 1 2 3 4
-		int start = 1 + sn * 10;	// 1  11
-		int end = (sn + 1) * 10;	// 10 20 
+		//페이징 처리
+		int sn = param.getPageNumber();	 // 0 1 2 3 4
+		int start = 1 + sn * 10;	 // 1 11 21 31
+		int end = (sn + 1) * 10;	 // 10 20 30 40
 		
 		param.setStart(start);
 		param.setEnd(end);
