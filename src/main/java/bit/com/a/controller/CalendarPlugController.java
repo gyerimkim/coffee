@@ -24,13 +24,13 @@ public class CalendarPlugController {
 	
 	@RequestMapping(value = "calendaralllist.do", method = RequestMethod.GET)
 	public String calendaralllist(Model model, HttpSession session) {
-		model.addAttribute("doc_title", "일정관리");
+		model.addAttribute("doc_title", "전체일정");
 		return "calendaralllist.tiles";
 	}
 	
 	@RequestMapping(value = "calendarmylist.do", method = RequestMethod.GET)
 	public String calendarmylist(Model model, HttpSession session) {
-		model.addAttribute("doc_title", "일정관리");
+		model.addAttribute("doc_title", "나의일정");
 		return "calendarmylist.tiles";
 	}
 	
