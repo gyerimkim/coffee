@@ -1,6 +1,6 @@
 # 프로젝트 소개
 
-- 프로젝트 명: 웨하스(Group Ware+House)Red Text
+- 프로젝트 명: 웨하스(Group Ware+House)
 - 내용: 기업의 업무를 온라인으로 처리하는 **그룹웨어** 시스템
 - 개발기간: 2021.07.29 ~ 2021.08.30
 - 개발환경: STS 4.11 / BootStrap 4 / JDK 1.8 / Apache Tomcat 9.0 / Oracle 등 
