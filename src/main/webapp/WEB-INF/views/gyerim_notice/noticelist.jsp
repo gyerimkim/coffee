@@ -48,7 +48,7 @@ $(document).ready(function () {
 <thead>
 <tr class="table-primary">
     <th>즐겨찾기</th><th>번호</th><th>제목</th>
-	<th>조회수</th><th>작성자</th><th>작성일</th>
+    <th>조회수</th><th>작성자</th><th>작성일</th>
 </tr>	
 </thead>
 
@@ -61,26 +61,29 @@ $(document).ready(function () {
 
 <c:forEach var="notice" items="${noticelist}" varStatus="i">
 <tr>
-	  <td>
-	  <button id="bookmark${notice.seq}" onclick="bookmark(${notice.seq})" style="color:gray; border: 0; background-color: white;">  
-	  <i class="fas fa-star"></i>
-	  </button>
-	  </td>
-	   <th><c:if test="${notice.category == '긴급' }"> 
+	<td>
+	     <button id="bookmark${notice.seq}" onclick="bookmark(${notice.seq})" style="color:gray; border: 0; background-color: white;">  
+		  <i class="fas fa-star"></i>
+	     </button>
+	</td>
+	
+	<td> <c:if test="${notice.category == '긴급' }"> 
 			📌	
-		</c:if>
-		<c:if  test="${notice.category == '공지' }">
-			${i.count}
-		</c:if>
-	</th>
+	     </c:if>
+	     <c:if test="${notice.category == '공지' }">
+		      ${i.count}
+	     </c:if>
+	</td>
+	
 	<td style="text-align: left; color: red;">
 		<a href="noticedetail.do?seq=${notice.seq}">
-			${notice.title}
+		    ${notice.title}
 			<c:if test="${notice.filename != null }"> 
 			 	📁	
 			 </c:if>
 		</a>
 	</td>
+	
 	<td>${notice.readcount}</td>
 	<td>${notice.username}</td>
 	<td>${notice.createdate.substring(2,11)}</td>	
@@ -146,12 +149,12 @@ $("#pagination").twbsPagination({
 	}
 });	
 
-
+//글 작성하기
 $("#_btnAdd").click(function () {
 	location.href = "noticewrite.do";	
 });
 
-
+//검색하기
 $("#btnSearch").click(function () {
 	location.href = "noticelist.do?search=" + $("#_search").val() + "&category=" + $("#_category").val();	
 });
@@ -176,33 +179,3 @@ function bookmark(no_seq){
 	})	
 }
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
