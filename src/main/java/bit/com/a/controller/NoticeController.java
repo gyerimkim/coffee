@@ -60,9 +60,9 @@ public class NoticeController {
 		}
 	}
 	
-	// 찜 메소드
-	   public int[] bcount(UserDto user, List<NoticeDto> nlist) {
-	      int[] count = new int[nlist.size()];
+	// 즐겨찾기 메소드
+	public int[] bcount(UserDto user, List<NoticeDto> nlist) {
+	    int[] count = new int[nlist.size()];
 	      if (user == null) {
 	         for (int i = 0; i < nlist.size(); i++) {
 	            count[i] = 0;
@@ -80,6 +80,41 @@ public class NoticeController {
 	   }
 	
 	
+	// 즐겨찾기 리스트
+	@RequestMapping(value = "bookmarklist.do", method = {RequestMethod.GET, RequestMethod.POST})
+	public String bookmarklist(Model model, SearchParam param,  HttpServletRequest req) {
+		model.addAttribute("doc_title", "즐겨찾기");
+		
+		HttpSession session = req.getSession();
+		UserDto temp = (UserDto)session.getAttribute("login");
+		System.out.println("로그인유저 " + temp);
+		int userno = temp.getUserNo();
+		System.out.println("로그인유저넘버 " + userno);	
+		
+		//페이징 처리
+		int sn = param.getPageNumber();	// 0 1 2 3 4
+		int start = 1 + sn * 10;	// 1  11
+		int end = (sn + 1) * 10;	// 10 20 
+		
+		param.setStart(start);
+		param.setEnd(end);
+
+		List<BookmarkDto> blist = bservice.getBookmarkList(userno);
+		
+		for(int i=0; i<blist.size(); i++) {
+			BookmarkDto bk = blist.get(i);
+			System.out.println(bk.toString());
+		}
+				
+		model.addAttribute("blist", blist);
+	
+		int totalCount = service.getNoticeCount(param);
+		model.addAttribute("totalCount", totalCount);
+		
+		model.addAttribute("pageNumber", param.getPageNumber() + 1);
+
+		return "bookmarklist.tiles";		
+	}
 	
 	
 	@RequestMapping(value = "noticelist.do", method = RequestMethod.GET)
@@ -106,49 +141,6 @@ public class NoticeController {
 		
 		return "noticelist.tiles";		
 	}
-	
-	@RequestMapping(value = "bookmarklist.do", method = {RequestMethod.GET, RequestMethod.POST})
-	public String bookmarklist(Model model, SearchParam param,  HttpServletRequest req) {
-		model.addAttribute("doc_title", "즐겨찾기");
-		
-		HttpSession session = req.getSession();
-		UserDto temp = (UserDto)session.getAttribute("login");
-		System.out.println("로그인유저 " + temp);
-		int userno = temp.getUserNo();
-		System.out.println("로그인유저넘버 " + userno);	
-		
-		int sn = param.getPageNumber();	// 0 1 2 3 4
-		int start = 1 + sn * 10;	// 1  11
-		int end = (sn + 1) * 10;	// 10 20 
-		
-		param.setStart(start);
-		param.setEnd(end);
-		
-
-		List<BookmarkDto> blist = bservice.getBookmarkList(userno);
-		
-		for(int i=0; i<blist.size(); i++) {
-			BookmarkDto bk = blist.get(i);
-			System.out.println(bk.toString());
-		}
-		
-		
-		
-		
-		model.addAttribute("blist", blist);
-		
-		/*
-		 * int totalCount = service.getNoticeCount(param);
-		 * model.addAttribute("totalCount", totalCount);
-		 * 
-		 * model.addAttribute("pageNumber", param.getPageNumber() + 1);
-		 * 
-		 * model.addAttribute("search", param.getSearch());
-		 * model.addAttribute("category", param.getCategory());
-		 */
-		return "bookmarklist.tiles";		
-	}
-	
 	
 	
 	@RequestMapping(value = "noticewrite.do", method = RequestMethod.GET)
