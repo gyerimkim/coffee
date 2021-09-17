@@ -89,6 +89,7 @@ $(document).ready(function () {
 </tbody>
 </table>
 <br><br>
+
 <!-- pagination -->
 <div class="container">
     <nav aria-label="Page navigation">
@@ -96,6 +97,7 @@ $(document).ready(function () {
     </nav>
 </div>
 <hr>
+
 <!-- 검색 -->
 <div align="center">
 <table>
@@ -117,14 +119,13 @@ $(document).ready(function () {
 </tr>
 </table>
 </div>
-
 <br>
 
 <script>
-let totalCount = ${totalCount};	
-let nowPage = ${pageNumber};	
+let totalCount = ${totalCount};	 //글의 총수
+let nowPage = ${pageNumber};	 //현재 페이지
 
-let pageSize = 10;
+let pageSize = 10;		  //페이지의 크기(몇 번부터 몇 번까지 보여줄 것이냐 [1]~[10])
 
 let _totalPages = totalCount / pageSize;
 if(totalCount % pageSize > 0){
@@ -145,10 +146,7 @@ $("#pagination").twbsPagination({
 	}
 });	
 
-</script>
 
-
-<script>
 $("#_btnAdd").click(function () {
 	location.href = "noticewrite.do";	
 });
@@ -159,7 +157,6 @@ $("#btnSearch").click(function () {
 });
 
 function bookmark(no_seq){
-//	alert(no_seq);
 	$.ajax({
 		url:"bookmark.do",
 		type:"post",
@@ -172,16 +169,11 @@ function bookmark(no_seq){
 				alert('해제되었습니다!');
 				$("#bookmark"+no_seq).css("color", "gray");
 			}
-			
-			
 		},
 		error:function(){
 			alert('error');
 		}
-	})
-	
-	
-	
+	})	
 }
 </script>
 
